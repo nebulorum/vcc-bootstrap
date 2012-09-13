@@ -13,5 +13,22 @@
         <module>bootstrap</module>
         <module>aether-launcher</module>
     </modules>
-    
+
+    <distributionManagement>
+        <repository>
+            <id>exnebula</id>
+            <uniqueVersion>true</uniqueVersion>
+            <name>ExNebula.org</name>
+            <url>scp://petra.exnebula.org:222/var/repo</url>
+        </repository>
+    </distributionManagement>
+
+    <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+            </extension>
+        </extensions>
+    </build>
 </project>

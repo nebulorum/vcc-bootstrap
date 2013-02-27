@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 - Thomas Santana <tms@exnebula.org>
+ * Copyright (C) 2008-2013 - Thomas Santana <tms@exnebula.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,7 +147,6 @@ public class BootTest {
 
   @Test
   public void classExistsButDoesNotHaveMain() throws Exception {
-    System.out.println("Name: " + sample.NoMain.class.getName());
     setConfigStream(makeConfig(sample.NoMain.class.getName(), realTestClasses));
 
     boot.start();
@@ -157,7 +156,6 @@ public class BootTest {
 
   @Test
   public void classExistsButHasNonStaticMain() throws Exception {
-    System.out.println("Name: " + sample.NoMain.class.getName());
     setConfigStream(makeConfig(NoStaticMain.class.getName(), realTestClasses));
 
     boot.start();

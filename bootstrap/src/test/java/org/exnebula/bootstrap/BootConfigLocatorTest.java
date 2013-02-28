@@ -16,12 +16,21 @@
  */
 package org.exnebula.bootstrap;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.URLDecoder;
+
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @FixMethodOrder(MethodSorters.JVM)
 public class BootConfigLocatorTest {
@@ -56,6 +65,22 @@ public class BootConfigLocatorTest {
   }
 
   @Test
+  public void findFromJarWithSpaceInProtectedDomain() throws IOException, ClassNotFoundException {
+    File destFile = copyClassJarFileToDestination(Test.class, "target/with space/");
+    Class<?> aClass = createClassLoaderAndLoadClass(destFile, "org.junit.rules.RuleChain");
+    FileUtils.copyFile(new File("pom.xml"), new File("target/with space/boot.cfg"));
+
+    File file = BootConfigLocator.locateFile(aClass, "boot.cfg");
+    assertEquals(new File(getJarFileFromClass(aClass).getParent(), "boot.cfg"), file);
+  }
+
+  @Test
+  public void ifProtectedDomainCodeSourceIsNotDefined_returnNull() {
+    assertNull("String has code source", String.class.getProtectionDomain().getCodeSource());
+    BootConfigLocator.locateFile(String.class, "rt.jar");
+  }
+
+  @Test
   public void findPropertyFirst() {
     File jar = getFileFromProtectionDomain(Test.class);
     System.setProperty(BootConfigLocator.JVM_CONFIG_OPTION, "./pom.xml");
@@ -74,4 +99,23 @@ public class BootConfigLocatorTest {
   private String replaceExtension(String original, String newExtension) {
     return original.substring(0, original.lastIndexOf('.') + 1) + newExtension;
   }
+
+  private Class<?> createClassLoaderAndLoadClass(File jarFile, String classToLoad) throws MalformedURLException, ClassNotFoundException {
+    URL[] urls = {jarFile.toURI().toURL()};
+    URLClassLoader classLoader = new URLClassLoader(urls, null);
+    return classLoader.loadClass(classToLoad);
+  }
+
+  private File copyClassJarFileToDestination(Class<Test> aClass, String target) throws IOException {
+    File srcFile = getJarFileFromClass(aClass);
+    File destFile = new File(target, srcFile.getName());
+    FileUtils.copyFile(srcFile, destFile);
+    assertTrue(destFile + " was note copied", destFile.exists());
+    return destFile;
+  }
+
+  private File getJarFileFromClass(Class<?> aClass) throws UnsupportedEncodingException {
+    return new File(URLDecoder.decode(aClass.getProtectionDomain().getCodeSource().getLocation().getFile(), "UTF-8"));
+  }
+
 }

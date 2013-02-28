@@ -17,6 +17,9 @@
 package org.exnebula.bootstrap;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.security.CodeSource;
 
 public class BootConfigLocator {
 
@@ -31,9 +34,22 @@ public class BootConfigLocator {
   }
 
   private static File locateFileAtProtectionDomainParentDirectory(Class<?> classToFind, String fileName) {
-    File domainFile = new File(classToFind.getProtectionDomain().getCodeSource().getLocation().getFile());
-    File file = new File(domainFile.getParentFile(), fileName);
-    return file.exists() ? file : null;
+    CodeSource codeSource = classToFind.getProtectionDomain().getCodeSource();
+    if (codeSource != null) {
+      File sourceFile = normalizedFileFromCodeSource(codeSource);
+      File file = new File(sourceFile.getParentFile(), fileName);
+      return file.exists() ? file : null;
+    } else {
+      return null;
+    }
+  }
+
+  private static File normalizedFileFromCodeSource(CodeSource codeSource) {
+    try {
+      return new File(URLDecoder.decode(codeSource.getLocation().getFile(), "UTF-8"));
+    } catch (UnsupportedEncodingException e) {
+      return null;
+    }
   }
 
   private static File locateFileFromSystemProperty() {

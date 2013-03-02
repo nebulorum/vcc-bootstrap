@@ -22,14 +22,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
-import java.security.Permission;
 import java.util.Arrays;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.TestCase.assertTrue;
 
 @SuppressWarnings("ALL")
 public class CommandLineTest {
@@ -39,6 +37,51 @@ public class CommandLineTest {
   private ByteArrayOutputStream capturedError;
   private File targetJar;
   private ByteArrayOutputStream capturedOutput;
+
+  @Before
+  public void setUp() throws IOException {
+    targetJar = new File(getTargetDirectory(), "test-mini.jar");
+    makeMiniJar(targetJar, new File(getTargetDirectory(), "test-classes"), "sample/Hello.class");
+
+    ExitBlocker.captureExit();
+
+    capturedOutput = new ByteArrayOutputStream(1000);
+    capturedError = new ByteArrayOutputStream(1000);
+    System.setOut(new PrintStream(capturedOutput));
+    System.setErr(new PrintStream(capturedError));
+  }
+
+  @After
+  public void tearDown() {
+    ExitBlocker.releaseExit();
+    System.setSecurityManager(securityManager);
+    getConfigFile().delete();
+  }
+
+  @Test
+  public void withGoodConfiguration_callMainINConfig() throws IOException {
+    makeConfigFile("sample.Hello", targetJar.getPath());
+    assertEquals("Ran main", 0, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, new String[]{}));
+    assertEquals("Hello" + EOL, capturedOutput.toString());
+    getConfigFile().delete();
+  }
+
+  @Test
+  public void testExitBadly() throws IOException {
+    getConfigFile().delete();
+    assertFalse("Config file exists", getConfigFile().exists());
+    String failureMessage = "Locate config file: Could not locate configuration file";
+    assertEquals("Ran but did not issue exit", 1, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, new String[]{failureMessage}));
+    assertEquals("Not matching expected error report", failureMessage, capturedError.toString().split(EOL)[0]);
+  }
+
+  private File getTargetDirectory() {
+    File base = new File("bootstrap");
+    if (base.exists() && base.isDirectory()) {
+      return new File(base, "target");
+    }
+    return new File("target");
+  }
 
   private void makeMiniJar(File targetJar, File baseDirectory, String classFile) throws IOException {
     JarOutputStream jar = new JarOutputStream(new FileOutputStream(targetJar));
@@ -52,19 +95,6 @@ public class CommandLineTest {
     jar.close();
   }
 
-  @Before
-  public void setUp() throws IOException {
-    targetJar = new File(getTargetDirectory(), "test-mini.jar");
-    makeMiniJar(targetJar, new File(getTargetDirectory(), "test-classes"), "sample/Hello.class");
-
-    securityManager = System.getSecurityManager();
-    capturedOutput = new ByteArrayOutputStream(1000);
-    capturedError = new ByteArrayOutputStream(1000);
-    System.setSecurityManager(new NoExitSecurityManager());
-    System.setOut(new PrintStream(capturedOutput));
-    System.setErr(new PrintStream(capturedError));
-  }
-
   private void makeConfigFile(String endpoint, String targetJarPath) throws IOException {
     FileUtils.writeLines(getConfigFile(),
       Arrays.asList(
@@ -74,75 +104,5 @@ public class CommandLineTest {
 
   private File getConfigFile() {
     return new File(getTargetDirectory(), "boot.cfg");
-  }
-
-  @After
-  public void tearDown() {
-    System.setSecurityManager(securityManager);
-    getConfigFile().delete();
-  }
-
-  @Test
-  public void withGoodConfiguration_callMainINConfig() throws IOException {
-    makeConfigFile("sample.Hello", targetJar.getPath());
-    assertFalse("Ran main", ranAndExited(new String[]{}));
-    assertEquals("Hello" + EOL, capturedOutput.toString());
-    getConfigFile().delete();
-  }
-
-  @Test
-  public void testExitBadly() throws IOException {
-    getConfigFile().delete();
-    assertFalse("Config file exists", getConfigFile().exists());
-    String failureMessage = "Locate config file: Could not locate configuration file";
-    assertTrue("Ran but did not issue exit", ranAndExited(new String[]{failureMessage}));
-    assertEquals("Not matching expected error report", failureMessage, capturedError.toString().split(EOL)[0]);
-  }
-
-  private File getTargetDirectory() {
-    File base = new File("bootstrap");
-    if (base.exists() && base.isDirectory()) {
-      return new File(base, "target");
-    }
-    return new File("target");
-  }
-
-  /**
-   * From: http://stackoverflow.com/questions/309396/java-how-to-test-methods-that-call-system-exit
-   */
-  private boolean ranAndExited(String[] args) {
-    try {
-      BootCommandLine.main(args);
-    } catch (ExitException e) {
-      return true;
-    }
-    return false;
-  }
-
-  static class ExitException extends SecurityException {
-    public final int status;
-
-    public ExitException(int status) {
-      super("Exited with status: " + status);
-      this.status = status;
-    }
-  }
-
-  private static class NoExitSecurityManager extends SecurityManager {
-    @Override
-    public void checkPermission(Permission perm) {
-      // must be here to check authorize
-    }
-
-    @Override
-    public void checkPermission(Permission perm, Object context) {
-      // must be here to check authorize
-    }
-
-    @Override
-    public void checkExit(int status) {
-      super.checkExit(status);
-      throw new ExitException(status);
-    }
   }
 }

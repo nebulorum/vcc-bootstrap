@@ -16,10 +16,20 @@
  */
 package org.exnebula.bootstrap;
 
-import java.io.File;
+import org.junit.Test;
 
-public class FileChecker {
-  boolean fileExists(String pathToFile) {
-    return new File(pathToFile).exists();
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class FileCheckerTest {
+
+  @Test
+  public void returnTrue_whenFilePresent() {
+    assertTrue("pom.xml should exist", new FileChecker().fileExists("pom.xml"));
+  }
+
+  @Test
+  public void returnFalse_whenFileIsNotPresent() {
+    assertFalse("not-found.txt should not exist", new FileChecker().fileExists("not-found.txt"));
   }
 }

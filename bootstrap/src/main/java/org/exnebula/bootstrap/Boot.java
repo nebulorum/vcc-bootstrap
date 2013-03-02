@@ -38,6 +38,10 @@ public class Boot {
     this.fileChecker = fileChecker;
   }
 
+  public Boot(BootErrorReporter bootErrorReporter, BootInputSource bootInputSource) {
+    this(bootErrorReporter, bootInputSource, new FileChecker());
+  }
+
   public void start() {
     try {
       startInner();

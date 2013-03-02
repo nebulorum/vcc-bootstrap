@@ -36,6 +36,7 @@ public class BootTest {
   private final String missingJar = "lib/missing.jar";
   private String realTestClasses;
   private String localPathThatDoesNotExist;
+  private FileChecker checker;
 
   private class TestBootErrorReporter implements BootErrorReporter {
     private Exception thrownException = null;
@@ -66,17 +67,18 @@ public class BootTest {
   public void setUp() throws Exception {
     errorReporter = new TestBootErrorReporter();
     bis = mock(BootInputSource.class);
-    boot = new Boot(errorReporter, bis);
+    checker = mock(FileChecker.class);
+    boot = new Boot(errorReporter, bis, checker);
 
     String testPath = normalizeTestPath();
     realTestClasses = testPath + "test-classes";
     localPathThatDoesNotExist = testPath + "not-found";
 
-    when(bis.fileExists(jarOne)).thenReturn(true);
-    when(bis.fileExists(missingJar)).thenReturn(false);
-    when(bis.fileExists(jarTwo)).thenReturn(true);
-    when(bis.fileExists(realTestClasses)).thenReturn(true);
-    when(bis.fileExists(localPathThatDoesNotExist)).thenReturn(true);
+    when(checker.fileExists(jarOne)).thenReturn(true);
+    when(checker.fileExists(missingJar)).thenReturn(false);
+    when(checker.fileExists(jarTwo)).thenReturn(true);
+    when(checker.fileExists(realTestClasses)).thenReturn(true);
+    when(checker.fileExists(localPathThatDoesNotExist)).thenReturn(true);
   }
 
   @Test
@@ -112,9 +114,9 @@ public class BootTest {
 
     boot.start();
 
-    verify(bis, atLeastOnce()).fileExists(jarOne);
-    verify(bis, atLeastOnce()).fileExists(missingJar);
-    verify(bis, never()).fileExists(jarTwo);
+    verify(checker, atLeastOnce()).fileExists(jarOne);
+    verify(checker, atLeastOnce()).fileExists(missingJar);
+    verify(checker, never()).fileExists(jarTwo);
     errorReporter.verifyCrashReportChained("Check class path files", FileNotFoundException.class, "File " + missingJar + " not found");
   }
 

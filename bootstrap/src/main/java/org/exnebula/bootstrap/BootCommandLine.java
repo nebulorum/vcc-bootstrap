@@ -40,7 +40,8 @@ public class BootCommandLine {
             return null;
           }
         }
-
+      },
+      new FileChecker() {
         public boolean fileExists(String pathToFile) {
           return new File(pathToFile).exists();
         }

@@ -27,13 +27,15 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 public class Boot {
-  private BootErrorReporter reporter;
-  private BootInputSource inputSource;
+  private final BootErrorReporter reporter;
+  private final BootInputSource inputSource;
   private String step = null;
+  private final FileChecker fileChecker;
 
-  public Boot(BootErrorReporter reporter, BootInputSource inputSource) {
+  public Boot(BootErrorReporter reporter, BootInputSource inputSource, FileChecker fileChecker) {
     this.reporter = reporter;
     this.inputSource = inputSource;
+    this.fileChecker = fileChecker;
   }
 
   public void start() {
@@ -69,7 +71,7 @@ public class Boot {
   private void validaClassPathsOrFail(BootConfig config) throws FileNotFoundException {
     step = "Check class path files";
     for (String path : config.getClassPath()) {
-      if (!inputSource.fileExists(path)) {
+      if (!fileChecker.fileExists(path)) {
         throw new FileNotFoundException("File " + path + " not found");
       }
     }

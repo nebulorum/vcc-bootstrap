@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2012 - Thomas Santana <tms@exnebula.org>
+ * Copyright (C) 2013-2013 - Thomas Santana <tms@exnebula.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,6 @@
  */
 package org.exnebula.bootstrap;
 
-import java.io.InputStream;
-
-public interface BootInputSource {
-  InputStream getConfigInputStream();
+public interface FileChecker {
+  boolean fileExists(String pathToFile);
 }

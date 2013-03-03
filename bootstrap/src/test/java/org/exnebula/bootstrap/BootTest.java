@@ -23,6 +23,7 @@ import sample.NoStaticMain;
 
 import java.io.*;
 
+import static org.exnebula.bootstrap.TestHelper.getTargetDirectory;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -71,9 +72,9 @@ public class BootTest {
     checker = mock(FileChecker.class);
     boot = new Boot(errorReporter, bis, checker);
 
-    String testPath = normalizeTestPath();
-    realTestClasses = testPath + "test-classes";
-    localPathThatDoesNotExist = testPath + "not-found";
+    File testPath = getTargetDirectory();
+    realTestClasses = new File(testPath, "test-classes").getPath();
+    localPathThatDoesNotExist = new File(testPath, "not-found").getPath();
 
     when(checker.fileExists(jarOne)).thenReturn(true);
     when(checker.fileExists(missingJar)).thenReturn(false);
@@ -164,13 +165,6 @@ public class BootTest {
     boot.start(emptyArguments);
     errorReporter.verifyCrashReportChained("Start entry point",
       NoSuchMethodException.class, "sample.NoStaticMain.main not static");
-  }
-
-  private String normalizeTestPath() {
-    String path = "";
-    if (new File("bootstrap").exists())
-      path = "bootstrap/";
-    return path + "target/";
   }
 
   private InputStream makeStreamThatThrowsIOException() {

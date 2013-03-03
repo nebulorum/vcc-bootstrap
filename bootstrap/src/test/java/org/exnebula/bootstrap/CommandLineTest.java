@@ -16,18 +16,15 @@
  */
 package org.exnebula.bootstrap;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
+import static org.exnebula.bootstrap.TestHelper.getTargetDirectory;
 
 @SuppressWarnings("ALL")
 public class CommandLineTest {
@@ -41,7 +38,7 @@ public class CommandLineTest {
   @Before
   public void setUp() throws IOException {
     targetJar = new File(getTargetDirectory(), "test-mini.jar");
-    makeMiniJar(targetJar, new File(getTargetDirectory(), "test-classes"), "sample/Hello.class");
+    TestHelper.makeMiniJar(targetJar, new File(getTargetDirectory(), "test-classes"), "sample/Hello.class");
 
     ExitBlocker.captureExit();
 
@@ -55,21 +52,21 @@ public class CommandLineTest {
   public void tearDown() {
     ExitBlocker.releaseExit();
     System.setSecurityManager(securityManager);
-    getConfigFile().delete();
+    TestHelper.getConfigFileAssociatedWithBoot().delete();
   }
 
   @Test
   public void withGoodConfiguration_callMainINConfig() throws IOException {
-    makeConfigFile("sample.Hello", targetJar.getPath());
+    TestHelper.makeConfigFile("sample.Hello", targetJar.getPath());
     assertEquals("Ran main", 0, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, new String[]{}));
     assertEquals("Hello" + EOL, capturedOutput.toString());
-    getConfigFile().delete();
+    TestHelper.getConfigFileAssociatedWithBoot().delete();
   }
 
   @Test
   public void testExitBadly() throws IOException {
-    getConfigFile().delete();
-    assertFalse("Config file exists", getConfigFile().exists());
+    TestHelper.getConfigFileAssociatedWithBoot().delete();
+    assertFalse("Config file exists", TestHelper.getConfigFileAssociatedWithBoot().exists());
     String failureMessage = "Locate config file: Could not locate configuration file";
     assertEquals("Ran but did not issue exit", 1, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, new String[]{failureMessage}));
     assertEquals("Not matching expected error report", failureMessage, capturedError.toString().split(EOL)[0]);
@@ -77,42 +74,12 @@ public class CommandLineTest {
 
   @Test
   public void shouldPassArgumentsToMain() throws IOException {
-    makeConfigFile("sample.Hello", targetJar.getPath());
+    TestHelper.makeConfigFile("sample.Hello", targetJar.getPath());
     String time = "time:" + System.currentTimeMillis();
     String[] args = {"fred", time};
     assertEquals("Ran main", 0, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, args));
     assertEquals("Hello fred! " + time + "!" + EOL, capturedOutput.toString());
-    getConfigFile().delete();
+    TestHelper.getConfigFileAssociatedWithBoot().delete();
   }
 
-  private File getTargetDirectory() {
-    File base = new File("bootstrap");
-    if (base.exists() && base.isDirectory()) {
-      return new File(base, "target");
-    }
-    return new File("target");
-  }
-
-  private void makeMiniJar(File targetJar, File baseDirectory, String classFile) throws IOException {
-    JarOutputStream jar = new JarOutputStream(new FileOutputStream(targetJar));
-    jar.putNextEntry(new ZipEntry(classFile));
-    byte[] buffer = new byte[4 * 1024];
-    InputStream in = new FileInputStream(new File(baseDirectory, classFile));
-    int count;
-    while ((count = in.read(buffer)) > 0) {
-      jar.write(buffer, 0, count);
-    }
-    jar.close();
-  }
-
-  private void makeConfigFile(String endpoint, String targetJarPath) throws IOException {
-    FileUtils.writeLines(getConfigFile(),
-      Arrays.asList(
-        "ep=" + endpoint,
-        "cp=" + targetJarPath));
-  }
-
-  private File getConfigFile() {
-    return new File(getTargetDirectory(), "boot.cfg");
-  }
 }

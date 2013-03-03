@@ -16,12 +16,18 @@
  */
 package org.exnebula.bootstrap;
 
-public class BootCommandLine {
-  public static void main(String[] args) {
-    Boot boot = new Boot(
-      new SystemErrorBootErrorReporter(),
-      new DefaultBootInputSource()
-    );
-    boot.start(args);
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
+public class DefaultBootInputSource implements BootInputSource {
+  public InputStream getConfigInputStream() {
+    File file = BootConfigLocator.locateFile(this.getClass(), BootConfigLocator.BOOT_FILE);
+    try {
+      return (file == null) ? null : new FileInputStream(file);
+    } catch (FileNotFoundException e) {
+      return null;
+    }
   }
 }

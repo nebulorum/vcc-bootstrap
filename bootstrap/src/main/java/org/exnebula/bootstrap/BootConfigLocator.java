@@ -24,6 +24,7 @@ import java.security.CodeSource;
 public class BootConfigLocator {
 
   public static final String JVM_CONFIG_OPTION = "org.exnebula.bootstrap.config";
+  public static final String BOOT_FILE = "boot.cfg";
 
   public static File locateFile(Class<?> classToFind, String fileName) {
     File result = locateFileFromSystemProperty();

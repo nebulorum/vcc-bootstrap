@@ -46,7 +46,7 @@ public class TestHelper {
   }
 
   public static File getConfigFileAssociatedWithBoot() {
-    return new File(getTargetDirectory(), "boot.cfg");
+    return new File(getTargetDirectory(), BootConfigLocator.BOOT_FILE);
   }
 
   public static void makeConfigFile(String endpoint, String targetJarPath) throws IOException {

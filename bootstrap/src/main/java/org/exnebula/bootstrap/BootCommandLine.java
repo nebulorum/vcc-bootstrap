@@ -36,6 +36,6 @@ public class BootCommandLine {
         }
       }
     );
-    boot.start();
+    boot.start(args);
   }
 }

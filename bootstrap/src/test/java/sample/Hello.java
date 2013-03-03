@@ -15,8 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 package sample;
+
 public class Hello {
-  static public void main(String[] arg) {
-    System.out.println("Hello");
+  static public void main(String[] args) {
+    System.out.print("Hello");
+    for (String arg : args) {
+      System.out.print(" " + arg + "!");
+    }
+    System.out.println();
   }
 }

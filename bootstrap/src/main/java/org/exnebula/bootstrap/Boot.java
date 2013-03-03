@@ -31,6 +31,7 @@ public class Boot {
   private final BootInputSource inputSource;
   private String step = null;
   private final FileChecker fileChecker;
+  private String[] arguments = null;
 
   public Boot(BootErrorReporter reporter, BootInputSource inputSource, FileChecker fileChecker) {
     this.reporter = reporter;
@@ -42,7 +43,8 @@ public class Boot {
     this(bootErrorReporter, bootInputSource, new FileChecker());
   }
 
-  public void start() {
+  public void start(String[] args) {
+    this.arguments = args;
     try {
       startInner();
     } catch (Exception e) {
@@ -86,7 +88,7 @@ public class Boot {
     Class<?> aClass = makeClassLoader(config).loadClass(config.getEntryPoint());
     Method main = aClass.getMethod("main", String[].class);
     assertIsStaticMethod(aClass, main);
-    main.invoke(null, new Object[]{new String[]{}});
+    main.invoke(null, new Object[]{arguments});
   }
 
   private URLClassLoader makeClassLoader(BootConfig config) throws MalformedURLException {

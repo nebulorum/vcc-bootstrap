@@ -37,6 +37,7 @@ public class BootTest {
   private String realTestClasses;
   private String localPathThatDoesNotExist;
   private FileChecker checker;
+  private final String[] emptyArguments = {};
 
   private class TestBootErrorReporter implements BootErrorReporter {
     private Exception thrownException = null;
@@ -83,7 +84,7 @@ public class BootTest {
 
   @Test
   public void failGetStream() throws Exception {
-    boot.start();
+    boot.start(emptyArguments);
 
     verify(bis, atLeastOnce()).getConfigInputStream();
     errorReporter.verifyCrashReportChained("Locate config file", BootStrapException.class, "Could not locate configuration file");
@@ -93,7 +94,7 @@ public class BootTest {
   public void gotValidStreamButBadConfigurationFile() throws Exception {
     setConfigStream("bad");
 
-    boot.start();
+    boot.start(emptyArguments);
 
     verify(bis, atLeastOnce()).getConfigInputStream();
     errorReporter.verifyCrashReportChained("Read config file", BootConfigLoader.InvalidConfigurationException.class, "Illegal line 'bad'");
@@ -103,7 +104,7 @@ public class BootTest {
   public void gotStreamThatThrowsIOException() throws Exception {
     doReturn(makeStreamThatThrowsIOException()).when(bis).getConfigInputStream();
 
-    boot.start();
+    boot.start(emptyArguments);
     verify(bis, atLeastOnce()).getConfigInputStream();
     errorReporter.verifyCrashReportChained("Read config file", IOException.class, "boom");
   }
@@ -112,7 +113,7 @@ public class BootTest {
   public void gotGoodFileLoadButFailedToFindClass() throws Exception {
     setConfigStream(makeConfig("org.pack.obj", jarOne, missingJar, jarTwo));
 
-    boot.start();
+    boot.start(emptyArguments);
 
     verify(checker, atLeastOnce()).fileExists(jarOne);
     verify(checker, atLeastOnce()).fileExists(missingJar);
@@ -124,16 +125,15 @@ public class BootTest {
   public void allPathsAreFoundButClassNotInPath() throws Exception {
     setConfigStream(makeConfig("sample.Good", localPathThatDoesNotExist));
 
-    boot.start();
+    boot.start(emptyArguments);
     errorReporter.verifyCrashReportChained("Start entry point", ClassNotFoundException.class, "sample.Good");
   }
 
   @Test
   public void addAllClassPath_firstDoesNotHaveClass() throws Exception {
     setConfigStream(makeConfig("sample.Good", localPathThatDoesNotExist, realTestClasses));
-
-    boot.start();
-    assertTrue("Set System property", Good.hasSetSystemProperty());
+    boot.start(emptyArguments);
+    assertTrue("Set System property", Good.hasSetSystemProperty(emptyArguments));
     assertFalse("Good class does not share loader", Good.hasMainSetStaticVariable());
   }
 
@@ -141,9 +141,10 @@ public class BootTest {
   public void allWhenWellAndInstanceFiresInItsContext() throws Exception {
     setConfigStream(makeConfig("sample.Good", realTestClasses));
 
-    boot.start();
+    String[] realArguments = {"some", "other" + System.currentTimeMillis()};
+    boot.start(realArguments);
     errorReporter.throwIfErrorReported();
-    assertTrue("Set System property", Good.hasSetSystemProperty());
+    assertTrue("Set System property", Good.hasSetSystemProperty(realArguments));
     assertFalse("Good class does not share loader", Good.hasMainSetStaticVariable());
   }
 
@@ -151,7 +152,7 @@ public class BootTest {
   public void classExistsButDoesNotHaveMain() throws Exception {
     setConfigStream(makeConfig(sample.NoMain.class.getName(), realTestClasses));
 
-    boot.start();
+    boot.start(emptyArguments);
     errorReporter.verifyCrashReportChained("Start entry point",
       NoSuchMethodException.class, "sample.NoMain.main([Ljava.lang.String;)");
   }
@@ -160,7 +161,7 @@ public class BootTest {
   public void classExistsButHasNonStaticMain() throws Exception {
     setConfigStream(makeConfig(NoStaticMain.class.getName(), realTestClasses));
 
-    boot.start();
+    boot.start(emptyArguments);
     errorReporter.verifyCrashReportChained("Start entry point",
       NoSuchMethodException.class, "sample.NoStaticMain.main not static");
   }

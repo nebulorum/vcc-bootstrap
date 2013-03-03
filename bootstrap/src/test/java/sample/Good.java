@@ -20,7 +20,7 @@ public class Good {
   private static boolean fired = false;
 
   public static void main(String[] args) {
-    System.setProperty("sample.Good", "wasCalled");
+    System.setProperty("sample.Good", makeExecutionMark(args));
     fired = true;
   }
 
@@ -28,7 +28,15 @@ public class Good {
     return fired;
   }
 
-  public static boolean hasSetSystemProperty() {
-    return "wasCalled".equals(System.getProperty("sample.Good"));
+  public static boolean hasSetSystemProperty(String[] args) {
+    String comparator = makeExecutionMark(args);
+
+    return comparator.equals(System.getProperty("sample.Good"));
+  }
+
+  private static String makeExecutionMark(String[] args) {
+    String comparator = "wasCalled";
+    for(String arg: args)  comparator += arg;
+    return comparator;
   }
 }

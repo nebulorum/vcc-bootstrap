@@ -75,6 +75,16 @@ public class CommandLineTest {
     assertEquals("Not matching expected error report", failureMessage, capturedError.toString().split(EOL)[0]);
   }
 
+  @Test
+  public void shouldPassArgumentsToMain() throws IOException {
+    makeConfigFile("sample.Hello", targetJar.getPath());
+    String time = "time:" + System.currentTimeMillis();
+    String[] args = {"fred", time};
+    assertEquals("Ran main", 0, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, args));
+    assertEquals("Hello fred! " + time + "!" + EOL, capturedOutput.toString());
+    getConfigFile().delete();
+  }
+
   private File getTargetDirectory() {
     File base = new File("bootstrap");
     if (base.exists() && base.isDirectory()) {

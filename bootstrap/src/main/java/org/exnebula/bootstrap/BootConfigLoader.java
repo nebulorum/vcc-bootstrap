@@ -84,6 +84,7 @@ public class BootConfigLoader {
       lines.add(line);
       line = readNonCommentLine(reader);
     }
+    reader.close();
     return lines;
   }
 

@@ -23,6 +23,7 @@ import java.security.Permission;
 public class ExitBlocker {
 
   private static SecurityManager securityManager = null;
+  private static int exitCode;
 
   public static int runMainAndCaptureExit(Class<?> aClass, String[] args) {
     try {
@@ -30,7 +31,7 @@ public class ExitBlocker {
       main.invoke(null, new Object[]{args});
     } catch (InvocationTargetException e) {
       if(e.getTargetException() instanceof ExitException) {
-        return ((ExitException)e.getTargetException()).status;
+        return exitCode = ((ExitException)e.getTargetException()).status;
       } else {
         throw new RuntimeException("Execute main failed: ", e);
       }
@@ -42,6 +43,15 @@ public class ExitBlocker {
     return 0;
   }
 
+  public static void runAndCaptureExit(Runnable runnable) {
+    try {
+      runnable.run();
+      throw new RuntimeException("Did not exit");
+    } catch(ExitException e) {
+      exitCode = e.status;
+    }
+  }
+
   public static void captureExit() {
     securityManager = System.getSecurityManager();
     System.setSecurityManager(new ExitBlocker.NoExitSecurityManager());
@@ -49,6 +59,10 @@ public class ExitBlocker {
 
   public static void releaseExit() {
     System.setSecurityManager(securityManager);
+  }
+
+  public static int getExitCode() {
+    return exitCode;
   }
 
   static class ExitException extends SecurityException {

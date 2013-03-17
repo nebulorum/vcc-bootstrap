@@ -30,10 +30,9 @@ import static org.exnebula.bootstrap.TestHelper.getTargetDirectory;
 public class CommandLineTest {
 
   private static String EOL = System.getProperty("line.separator");
+  private OutputCapture outputCapture;
   private SecurityManager securityManager;
-  private ByteArrayOutputStream capturedError;
   private File targetJar;
-  private ByteArrayOutputStream capturedOutput;
 
   @Before
   public void setUp() throws IOException {
@@ -41,11 +40,7 @@ public class CommandLineTest {
     TestHelper.makeMiniJar(targetJar, new File(getTargetDirectory(), "test-classes"), "sample/Hello.class");
 
     ExitBlocker.captureExit();
-
-    capturedOutput = new ByteArrayOutputStream(1000);
-    capturedError = new ByteArrayOutputStream(1000);
-    System.setOut(new PrintStream(capturedOutput));
-    System.setErr(new PrintStream(capturedError));
+    outputCapture = new OutputCapture();
   }
 
   @After
@@ -59,7 +54,7 @@ public class CommandLineTest {
   public void withGoodConfiguration_callMainINConfig() throws IOException {
     TestHelper.makeConfigFile("sample.Hello", targetJar.getPath());
     assertEquals("Ran main", 0, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, new String[]{}));
-    assertEquals("Hello" + EOL, capturedOutput.toString());
+    assertEquals("Hello", outputCapture.getOutput()[0]);
     TestHelper.getConfigFileAssociatedWithBoot().delete();
   }
 
@@ -69,7 +64,7 @@ public class CommandLineTest {
     assertFalse("Config file exists", TestHelper.getConfigFileAssociatedWithBoot().exists());
     String failureMessage = "Locate config file: Could not locate configuration file";
     assertEquals("Ran but did not issue exit", 1, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, new String[]{failureMessage}));
-    assertEquals("Not matching expected error report", failureMessage, capturedError.toString().split(EOL)[0]);
+    assertEquals("Not matching expected error report", failureMessage, outputCapture.getError()[0]);
   }
 
   @Test
@@ -78,7 +73,7 @@ public class CommandLineTest {
     String time = "time:" + System.currentTimeMillis();
     String[] args = {"fred", time};
     assertEquals("Ran main", 0, ExitBlocker.runMainAndCaptureExit(BootCommandLine.class, args));
-    assertEquals("Hello fred! " + time + "!" + EOL, capturedOutput.toString());
+    assertEquals("Hello fred! " + time + "!", outputCapture.getOutput()[0]);
     TestHelper.getConfigFileAssociatedWithBoot().delete();
   }
 

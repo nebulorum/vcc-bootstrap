@@ -20,16 +20,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class SystemErrorBootErrorReporterTest {
-
-  static private final String EOL = System.getProperty("line.separator");
 
   @Before
   public void setUp() {
@@ -43,11 +36,7 @@ public class SystemErrorBootErrorReporterTest {
 
   @Test
   public void sendReportToSystemError() {
-    ByteArrayOutputStream capturedOutput = new ByteArrayOutputStream(1000);
-    ByteArrayOutputStream capturedError = new ByteArrayOutputStream(1000);
-    System.setOut(new PrintStream(capturedOutput));
-    System.setErr(new PrintStream(capturedError));
-
+    OutputCapture outputCapture = new OutputCapture();
     BootErrorReporter reporter = new SystemErrorBootErrorReporter();
     try {
       reporter.reportFailure("some context", new RuntimeException("The error"));
@@ -56,11 +45,11 @@ public class SystemErrorBootErrorReporterTest {
       assertEquals("Send correct status", 1, e.status);
     }
 
-    String[] lines = capturedError.toString().split(EOL);
+    String[] lines = outputCapture.getError();
     assertTrue("output has many lines", lines.length > 0);
     assertEquals("Description not in first line", "some context: The error", lines[0]);
     assertEquals("Stack trace start on second line", "java.lang.RuntimeException: The error", lines[1]);
     assertTrue("Stack trace continues", lines[2].startsWith("\tat " + this.getClass().getName()));
-    assertEquals("stdout is not empty", "", capturedOutput.toString());
+    assertEquals("stdout is not empty", "", outputCapture.getOutput()[0]);
   }
 }
